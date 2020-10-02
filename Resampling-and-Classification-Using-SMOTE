@@ -1,0 +1,76 @@
+#import library
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import recall_score, precision_score, f1_score
+from sklearn.metrics import roc_curve, roc_auc_score
+np.random.seed(42)
+
+
+Step 1. Loading Dataset
+dataset = pd.read_csv('ya.csv',delimiter = ';',names=['id','account_age',
+'no_follower','no_following',
+'no_userfavourites','no_lists','no_tweets','no_retweet
+s','no_hashtags','no_usermention','no_urls','no_char','
+no_digits','Class'])
+
+##Pemilihan Data
+data = dataset.drop(['id','Class'], axis=1).values
+label = dataset.drop(['id','account_age','no_follower','no_following',
+'no_userfavourites','no_lists','no_tweets','no_retweet
+s','no_hashtags','no_usermention','no_urls','no_char','
+no_digits'], axis=1).values
+
+
+Step 2. Resampling
+from imblearn.over_sampling import SMOTE
+smote = SMOTE(k_neighbors = 5,ratio=0.25)83
+data_smote, label_smote = smote.fit_sample(data, label)
+
+
+Step 3. Split Data
+data_smote_train,data_smote_test,
+label_smote_train,label_smote_test=train_test_split(data_
+smote,label_smote,test_size=0.2,random_state=42)
+
+
+Step 4. Normalisasi
+mm = MinMaxScaler()
+data_smote_train=mm.fit_transform(data_smote_train)
+data_smote_test=mm.transform(data_smote_test)
+
+
+Step 5. Klasifikasi
+##Random Forest
+clf = RandomForestClassifier (bootstrap=True, criterion='gini',
+max_features='auto', min_samples_split = 3,
+n_estimators=50,oob_score=True, random_state = 42)
+
+##Fitting Data
+clf.fit(data_smote_train, label_smote_train)
+
+##Training predictions
+train_smote_data_clf_predictions = clf.predict(data_smote_train)
+train_smote_data_clf_probs = clf.predict_proba(data_smote_train)[:, 0]
+
+##Testing predictions
+clf_predictions = clf.predict(data_smote_test)
+clf_probs = clf.predict_proba(data_smote_test)[:, 0]
+
+##Predicting the Test set results
+label_smote_pred = clf.predict(data_smote_test)84
+
+
+Step 6. Performansi
+cm = confusion_matrix(label_smote_test, label_smote_pred)
+recall = recall_score(label_smote_test,label_smote_pred)
+ps = precision_score(label_smote_test,label_smote_pred)
+f1 = f1_score(label_smote_test,label_smote_pred)
+auc = roc_auc_score(label_smote_test,label_smote_pred)
+clf.oob_score = clf.score(data_smote_test, label_smote_test)
+oob_error = 1 - clf.oob_score
+fpr, tpr, thresholds = roc_curve(label_smote_test,label_smote_pred)
