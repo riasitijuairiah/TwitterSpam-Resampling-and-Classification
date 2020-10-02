@@ -1,0 +1,65 @@
+#import library
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import recall_score, precision_score, accuracy_score,
+f1_score
+np.random.seed(42)
+
+
+Step 1. Loading Dataset
+dataset = pd.read_csv('ya.csv',delimiter = ';',names=['id','account_age',
+'no_follower','no_following',
+'no_userfavourites','no_lists','no_tweets','no_retweet
+s','no_hashtags','no_usermention','no_urls','no_char','
+no_digits','Class'])
+
+
+Step 2. Split Data
+data = dataset.iloc[:,1:13].values
+label = dataset.iloc[:,-1].values
+data_train,data_test, label_train,label_test = train_test_split(data,label,
+test_size=0.2,random_state=42)
+
+
+Step 3. Normalisasi
+mm = MinMaxScaler()
+data_train=mm.fit_transform(data_train)
+data_test=mm.transform(data_test)76
+
+
+Step 4. Klasifikasi
+##Random Forest
+clf = RandomForestClassifier (bootstrap=True, criterion='gini',
+max_features='auto', min_samples_split = 3,
+n_estimators=500,oob_score=True,
+random_state=42)
+
+
+##Fitting Data
+clf.fit(data_train, label_train)
+##Training predictions (to demonstrate overfitting)
+train_data_clf_predictions = clf.predict(data_train)
+train_data_clf_probs = clf.predict_proba(data_train)[:, 0]
+
+##Testing predictions (to determine performance)
+clf_predictions = clf.predict(data_test)
+clf_probs = clf.predict_proba(data_test)[:, 0]
+
+##Predicting the Test set results
+label_pred = clf.predict(data_test)
+
+
+Step 5. Performansi
+cm = confusion_matrix(label_test, label_pred)
+tpr = recall_score(label_test,label_pred)
+ps = precision_score(label_test,label_pred)
+f1 = f1_score(label_test,label_pred)
+auc = roc_auc_score(label_test,label_pred)
+clf.oob_score = clf.score(data_test, label_test)
+oob_error = 1 - clf.oob_score
+fpr, tpr, thresholds = roc_curve(label_test,la
